@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="start" type="NodeJSConfigurationType" factoryName="Node.js" path-to-js-file="server.js" working-dir="$PROJECT_DIR$">
+  <configuration default="false" name="start" type="NodeJSConfigurationType" factoryName="Node.js" path-to-js-file="dist/server.js" working-dir="$PROJECT_DIR$">
     <envs>
       <env name="DEBUG" value="nbadal-api:*" />
       <env name="NODE_ENV" value="development" />
