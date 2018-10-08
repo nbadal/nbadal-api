@@ -1,6 +1,5 @@
 language: node_js
-node_js:
-  - "node"
+node_js: node
 
 before_script:
   - node --version
@@ -10,3 +9,13 @@ before_script:
 script:
   - tsc
   - tslint --project .
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: BmemE7BKHBny4sDPhHec9TJQLOLPYaKOFwxRWRwwyJNy/v4w2xffVPywhF1R24q96+eLa/r1vrXBhpFB63F4F/jszK0cophaDIbgThR285XpMvMxYnJ/1JRHEZ2revH+q8oXIxjleNfL4nh1VaSTUGPccHjj7hAXCFOdXhec/7DHGPrJGWssTF1/345t/9rprVna+DRKVca3VtBpiim8wg2fppYGRG/OPjKmEQXLv0fNJ/xNWTEZEeGwZRGaflASlbdCNJH3MoyWZD0MLq37S/1r+8Kcc72ejcgEdDtG87CZMUVcZPoELiH+kfNHiiUJhHKhqyduGWdXSd9dvdY+Q8Eb0cJLn75zQn7GsmMGyUIcrxT73S73R0BAdPd7EKZisQZN7FuoRe42TFACXrlqvVNqiPf+uL8iMNkDlJvn7kvoZfyIEphKbMD5v21MQvlYQ6SXKHhv71QohmN0oFqUFByAYvlDBhs4usjCw6ELTcvC52H7SuE2O55NegKsdxOugLUrbU/c758YkzfgGDHhFLdEh4xUDw4zVhstO+bRQQe9OMTbrjH58CFnkm5UT+E0T286T8wNCxHLDHK6BXA1HnkSLNMYcwlGM+czaE0hpcMRER9xxlrBYds98W9z6+qjcDTKmUzoLh+gMHNu0DgeRqpISnoMlRiYLzT2MyjHM1U=
+  skip_cleanup: true
+  app: nbadal-api
+  on:
+    branch: master
+    repo: nbadal/nbadal-api
