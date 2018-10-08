@@ -1,8 +1,9 @@
 language: nodejs
 node_js:
-  - "10"
+  - "node"
 
 before_script:
+  - node --version
   - npm i -g tslint typescript
   - npm i
 
