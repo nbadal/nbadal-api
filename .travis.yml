@@ -1,8 +1,9 @@
 language: nodejs
 
 before_script:
-  - npm run setup
-  - npm run build
+  - npm i -g tslint typescript
+  - npm i
 
 script:
-  - npm test
+  - tsc
+  - tslint --project .

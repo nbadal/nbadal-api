@@ -3,9 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "pretest": "npm run build",
-    "build": "tsc",
-    "test": "true",
     "start": "node dist/server.js"
   },
   "dependencies": {
