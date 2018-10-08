@@ -1,6 +1,4 @@
-#!/usr/bin/env node
-
-var app = require('../app');
+var app = require('./app');
 var debug = require('debug')('nbadal-api:server');
 var http = require('http');
 
