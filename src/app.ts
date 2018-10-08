@@ -3,12 +3,27 @@ import express from "express";
 import {Request, Response} from "express-serve-static-core";
 import createError from "http-errors";
 import logger from "morgan";
+import Trello from "node-trello";
 import path from "path";
+import {bindNodeCallback} from "rxjs";
+import {first, map, mergeMap} from "rxjs/operators";
 
 class App {
     public express: express.Application;
 
+    private trelloApi: Trello;
+    private trelloGet = bindNodeCallback((uri: string, args: object,
+                                          callback: (err: Error, body: any) => void) => {
+        this.trelloApi.get(uri, args, callback);
+    });
+
     constructor() {
+        try {
+            this.trelloApi = new Trello(process.env.TRELLO_API_KEY as string,
+                process.env.TRELLO_TOKEN as string);
+        } catch (err) {
+            throw Error("Trello API keys not set or invalid!");
+        }
         this.express = express();
         this.config();
     }
@@ -27,7 +42,21 @@ class App {
             res.redirect(301, "https://nbad.al");
         });
         this.express.get("/test.json", (req, res) => {
-            res.json({message: "hello json"});
+            res.json( {message: "hello json"});
+        });
+        this.express.get("/trello", (req, res) => {
+            const boardId = "0vBMcbdj";
+            const listName = "Todo";
+
+            this.trelloGet(`/1/boards/${boardId}/lists`, {fields: "name", cards: "open", card_fields: "name"})
+                .pipe(mergeMap((lists: any) => lists as any[]),
+                    first((list: any) => list.name.toLowerCase() === listName.toLowerCase()),
+                    map((list: any) => list.cards))
+                .subscribe((result: any) => {
+                    res.json(result);
+                }, (err: Error) => {
+                    throw err;
+                });
         });
 
         this.express.use((req, res, next) => {
