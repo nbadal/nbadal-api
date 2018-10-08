@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "postinstall": "npm run build",
     "build": "tsc",
     "start": "node dist/server.js"
   },
