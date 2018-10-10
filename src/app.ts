@@ -41,9 +41,6 @@ class App {
         this.express.get("/", (req, res) => {
             res.redirect(301, "https://nbad.al");
         });
-        this.express.get("/test.json", (req, res) => {
-            res.json( {message: "hello json"});
-        });
         this.express.get("/trello", (req, res) => {
             const boardId = "0vBMcbdj";
             const listName = "Todo";
@@ -55,7 +52,7 @@ class App {
                 .subscribe((result: any) => {
                     res.json(result);
                 }, (err: Error) => {
-                    throw err;
+                    res.json({error: err});
                 });
         });
 
