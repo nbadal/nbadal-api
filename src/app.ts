@@ -38,6 +38,13 @@ class App {
         this.express.use(cookieParser());
         this.express.use(express.static(path.join(__dirname, "public")));
 
+        // TODO: should this be disabled for prod???
+        this.express.all("/trello", ((req, res, next) => {
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            next();
+        }));
+
         this.express.get("/", (req, res) => {
             res.redirect(301, "https://nbad.al");
         });
