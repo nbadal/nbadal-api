@@ -1,6 +1,6 @@
 import cookieParser from "cookie-parser";
 import express from "express";
-import {Request, Response} from "express-serve-static-core";
+import {NextFunction, Request, Response} from "express-serve-static-core";
 import createError from "http-errors";
 import logger from "morgan";
 import Trello from "node-trello";
@@ -29,6 +29,12 @@ class App {
     }
 
     private config() {
+        const enableCors = (req: Request, res: Response, next: NextFunction) => {
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            next();
+        };
+
         this.express.set("views", path.join(__dirname, "views"));
         this.express.set("view engine", "pug");
 
@@ -38,16 +44,11 @@ class App {
         this.express.use(cookieParser());
         this.express.use(express.static(path.join(__dirname, "public")));
 
-        // TODO: should this be disabled for prod???
-        this.express.all("/trello", ((req, res, next) => {
-            res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-            next();
-        }));
-
         this.express.get("/", (req, res) => {
             res.redirect(301, "https://nbad.al");
         });
+
+        this.express.all("/trello", enableCors);
         this.express.get("/trello", (req, res) => {
             const boardId = "0vBMcbdj";
             const listName = "Todo";
