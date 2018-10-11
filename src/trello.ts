@@ -1,6 +1,6 @@
 import express from "express";
 import Trello from "node-trello";
-import {bindNodeCallback, timer} from "rxjs";
+import {BehaviorSubject, bindNodeCallback} from "rxjs";
 import {first, map, mergeMap} from "rxjs/operators";
 
 const router = express.Router();
@@ -9,6 +9,7 @@ const trelloGet = bindNodeCallback((uri: string, args: object,
                                     callback: (err: Error, body: any) => void) => {
     trelloApi.get(uri, args, callback);
 });
+const trelloUpdateSubject = new BehaviorSubject(true);
 
 try {
     trelloApi = new Trello(process.env.TRELLO_API_KEY as string,
@@ -33,7 +34,7 @@ router.get("/", (req, res, next) => {
             "Connection": "keep-alive",
             "Content-Type": "text/event-stream",
         });
-        timer(0, 10000)
+        trelloUpdateSubject
             .pipe(mergeMap(() => getTrelloCards()))
             .subscribe((cards) => {
                 res.write(`data: ${JSON.stringify(cards)}\n\n`);
@@ -52,7 +53,8 @@ router.get("/", (req, res) => {
         });
 });
 router.post("/", (req, res) => {
-    console.log("Got Trello POST: " + JSON.stringify(req.body));
+    // console.log("Got Trello POST: " + JSON.stringify(req.body));
+    trelloUpdateSubject.next(true);
     res.sendStatus(200);
 });
 
