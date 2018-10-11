@@ -1,4 +1,5 @@
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import express from "express";
 import {Request, Response} from "express-serve-static-core";
 import createError from "http-errors";
@@ -24,6 +25,7 @@ class App {
         this.express.use(express.urlencoded({extended: false}));
         this.express.use(cookieParser());
         this.express.use(express.static(path.join(__dirname, "public")));
+        this.express.use(cors());
 
         this.express.get("/", (req, res) => {
             res.redirect(301, "https://nbad.al");

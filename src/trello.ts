@@ -1,5 +1,4 @@
 import express from "express";
-import {NextFunction, Request, Response} from "express-serve-static-core";
 import Trello from "node-trello";
 import {bindNodeCallback} from "rxjs";
 import {first, map, mergeMap} from "rxjs/operators";
@@ -18,13 +17,6 @@ try {
     throw Error("Trello API keys not set or invalid!");
 }
 
-const enableCors = (req: Request, res: Response, next: NextFunction) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-};
-
-router.all("/", enableCors);
 router.get("/", (req, res) => {
     const boardId = "0vBMcbdj";
     const listName = "Todo";
