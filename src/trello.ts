@@ -49,7 +49,9 @@ router.get("/", (req, res, next) => {
 });
 
 router.get("/", (req, res) => {
-    getTrelloCards().subscribe(res.json, (err) => {
+    getTrelloCards().subscribe((result) => {
+        res.json(result);
+    }, (err: Error) => {
         res.json({error: err});
     });
 });
