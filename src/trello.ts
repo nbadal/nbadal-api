@@ -21,10 +21,13 @@ try {
 function getTrelloCards() {
     const boardId = "0vBMcbdj";
     const listName = "Todo";
-    return trelloGet(`/1/boards/${boardId}/lists`, {fields: "name", cards: "open", card_fields: "name"})
-        .pipe(mergeMap((lists: any) => lists as any[]),
-            first((list: any) => list.name.toLowerCase() === listName.toLowerCase()),
-            map((list: any) => list.cards));
+    const listArgs = {fields: "name", cards: "open", card_fields: "name"};
+
+    return trelloGet(`/1/boards/${boardId}/lists`, listArgs).pipe(
+        mergeMap((lists) => lists as any[]),
+        first((list) => list.name.toLowerCase() === listName.toLowerCase()),
+        map((list) => list.cards),
+    );
 }
 
 router.get("/", (req, res, next) => {
@@ -34,23 +37,21 @@ router.get("/", (req, res, next) => {
             "Connection": "keep-alive",
             "Content-Type": "text/event-stream",
         });
-        trelloUpdateSubject
-            .pipe(mergeMap(() => getTrelloCards()))
-            .subscribe((cards) => {
-                res.write(`data: ${JSON.stringify(cards)}\n\n`);
-            });
+        const trelloSub = trelloUpdateSubject.pipe(
+            mergeMap(() => getTrelloCards()),
+            map((cards) => JSON.stringify(cards)),
+            map((cards) => `data: ${cards}\n\n`),
+        ).subscribe(res.write);
+        req.on("close", trelloSub.unsubscribe);
     } else {
         next();
     }
 });
 
 router.get("/", (req, res) => {
-    getTrelloCards()
-        .subscribe((result: any) => {
-            res.json(result);
-        }, (err: Error) => {
-            res.json({error: err});
-        });
+    getTrelloCards().subscribe(res.json, (err) => {
+        res.json({error: err});
+    });
 });
 router.post("/", (req, res) => {
     // console.log("Got Trello POST: " + JSON.stringify(req.body));
