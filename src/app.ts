@@ -63,6 +63,10 @@ class App {
                     res.json({error: err});
                 });
         });
+        this.express.post("/trello", (req, res) => {
+            console.log("Got Trello POST: " + JSON.stringify(req.body));
+            res.sendStatus(200);
+        });
 
         this.express.use((req, res, next) => {
             next(createError(404));
