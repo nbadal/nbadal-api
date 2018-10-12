@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "debug": "nodemon --inspect dist/server.js"
   },
   "dependencies": {
     "cookie-parser": "~1.4.3",
@@ -26,6 +27,7 @@
     "@types/http-errors": "^1.6.1",
     "@types/morgan": "^1.7.35",
     "@types/node": "^10.11.4",
-    "@types/rx": "^4.1.1"
+    "@types/rx": "^4.1.1",
+    "nodemon": "^1.18.4"
   }
 }
