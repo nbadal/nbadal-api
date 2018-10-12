@@ -26,11 +26,11 @@ function getTrelloCards() {
     return trelloGet(`/1/boards/${boardId}/lists`, listArgs).pipe(
         mergeMap((lists) => lists as any[]),
         filter((list) => listNames.indexOf(list.name.toLowerCase()) >= 0),
-        reduce((listMap: any, list) => {
+        reduce((listArray: any, list) => {
             const formattedName = list.name.replace(" ", "-").toLowerCase();
-            listMap[formattedName] = list.cards;
-            return listMap;
-        }, {}),
+            listArray.push({name: formattedName, cards: list.cards});
+            return listArray;
+        }, []),
     );
 }
 
