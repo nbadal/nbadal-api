@@ -1,9 +1,9 @@
-import Debug from "debug";
 import {config} from "dotenv";
+config(); // .env
+
+import Debug from "debug";
 import http from "http";
 import express from "./app";
-
-config(); // .env
 
 const debug = Debug("nbadal-api:server");
 
