@@ -1,7 +1,8 @@
 import crypto from "crypto";
 import express from "express";
 import admin from "firebase-admin";
-import * as request from "request";
+import oauth2 from "simple-oauth2";
+import TwitchClient from "twitch";
 
 const router = express.Router();
 const privateKey = process.env.FIREBASE_PRIVATE_KEY || " ";
@@ -17,17 +18,33 @@ const firebase = admin.initializeApp({
 const clientId = process.env.TWITCH_CLIENT_ID || "";
 const clientSecret = process.env.TWITCH_CLIENT_SECRET || "";
 
+const twitchAuth = oauth2.create({
+    auth: {
+        authorizePath: "/oauth2/authorize",
+        tokenHost: "https://id.twitch.tv",
+        tokenPath: "/oauth2/token",
+    },
+    client: {
+        id: clientId,
+        secret: clientSecret,
+    },
+    options: {
+        authorizationMethod: "body",
+    },
+});
+
 router.get("/redirect", (req, res) => {
     const state = req.cookies.state || crypto.randomBytes(20).toString("hex");
     const host = req.get("host");
     const secureCookie = typeof host === "string" && (host.indexOf("localhost") !== 0);
     res.cookie("state", state.toString(), {maxAge: 3600000, secure: secureCookie, httpOnly: true});
-    res.redirect(`https://id.twitch.tv/oauth2/authorize`
-        + `?client_id=${clientId}`
-        + `&redirect_uri=${req.protocol}://${host}/twitch/callback`
-        + `&response_type=code`
-        + `&scope=user_read`
-        + `&state=${state}`);
+
+    const authorizeUri = twitchAuth.authorizationCode.authorizeURL({
+        redirect_uri: `${req.protocol}://${host}/twitch/callback`,
+        scope: "user_read",
+        state,
+    });
+    res.redirect(authorizeUri);
 });
 
 router.get("/callback", (req, res) => {
@@ -40,55 +57,22 @@ router.get("/callback", (req, res) => {
         return;
     }
 
-    request.post(`https://id.twitch.tv/oauth2/token`
-        + `?client_id=${clientId}`
-        + `&client_secret=${clientSecret}`
-        + `&code=${req.query.code}`
-        + `&grant_type=authorization_code`
-        + `&redirect_uri=${req.protocol}://${req.get("host")}/twitch/callback`,
-        (tokenError, tokenResponse, tokenBody) => {
-            if (tokenError) {
-                res.status(500).send(JSON.stringify(tokenError));
-                return;
-            }
-            if (tokenResponse.statusCode !== 200) {
-                res.status(200).send(tokenBody);
-                return;
-            }
+    twitchAuth.authorizationCode.getToken({
+        code: req.query.code,
+        redirect_uri: `${req.protocol}://${req.get("host")}/twitch/callback`,
+    }).then((result) => {
+        const twitchClient = TwitchClient.withCredentials(clientId, result.access_token);
 
-            const tokenJson = JSON.parse(tokenBody);
-
-            const accessToken = tokenJson.access_token;
-            const refreshToken = tokenJson.refresh_token;
-
-            request.get({
-                headers: {
-                    "Accept": "application/vnd.twitchtv.v5+json",
-                    "Authorization": `OAuth ${accessToken}`,
-                    "Client-ID": clientId,
-                },
-                uri: "https://api.twitch.tv/kraken/user",
-            }, ((infoError, infoResponse, infoBody) => {
-                if (infoError) {
-                    res.status(500).send(JSON.stringify(infoError));
-                    return;
-                }
-
-                if (infoBody.error) {
-                    res.status(200).send(infoBody.error);
-                    return;
-                }
-                const infoJson = JSON.parse(infoBody);
-
-                const twitchId = infoJson._id;
-                firebase.auth().createCustomToken(`twitch:${twitchId}`)
-                    .then((token) => {
-                        res.status(200).send(`${twitchId}'s token is: ${token}`);
-                    }, (err) => {
-                        res.status(500).send(JSON.stringify(err));
-                    });
-            }));
+        twitchClient.users.getMe().then((user) => {
+            const twitchId = user.id;
+            const userId = `twitch:${twitchId}`;
+            firebase.auth().createCustomToken(userId).then((token) => {
+                res.status(200).send(`${twitchId}'s token is: ${token}`);
+            });
         });
+    }, (error) => {
+        res.status(500).send(JSON.stringify(error));
+    });
 });
 
 export = router;
