@@ -6,6 +6,7 @@ import createError from "http-errors";
 import logger from "morgan";
 import path from "path";
 import TrelloRouter from "./trello";
+import TwitchRouter from "./twitch";
 
 class App {
     public express: express.Application;
@@ -32,6 +33,7 @@ class App {
         });
 
         this.express.use("/trello", TrelloRouter);
+        this.express.use("/twitch", TwitchRouter);
 
         this.express.use((req, res, next) => {
             next(createError(404));
