@@ -61,17 +61,25 @@ router.get("/callback", (req, res) => {
         code: req.query.code,
         redirect_uri: `${req.protocol}://${req.get("host")}/twitch/callback`,
     }).then((result) => {
+        const accessToken = result.access_token;
+        const refreshToken = result.refresh_token;
         const twitchClient = TwitchClient.withCredentials(clientId, result.access_token);
 
         twitchClient.users.getMe().then((user) => {
             const twitchId = user.id;
+            const twitchUser = user.name;
             const userId = `twitch:${twitchId}`;
-            firebase.auth().createCustomToken(userId).then((token) => {
-                res.status(200).send(`${twitchId}'s token is: ${token}`);
+
+            // TODO: put tokens / username into user DB.
+
+            firebase.auth().createCustomToken(userId).then((userToken) => {
+                const clientUrl = process.env.CLIENT_URL || "http://localhost:4200";
+                res.redirect(`${clientUrl}/auth/${userToken}`);
             });
         });
     }, (error) => {
-        res.status(500).send(JSON.stringify(error));
+        console.log(error.message);
+        res.sendStatus(500);
     });
 });
 
