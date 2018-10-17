@@ -67,7 +67,7 @@ router.get("/callback", (req, res) => {
                     refreshToken,
                 },
                 twitchName,
-            });
+            }, {merge: true});
 
             firebase.auth().createCustomToken(userId).then((userToken) => {
                 const clientUrl = process.env.CLIENT_URL || "http://localhost:4200";
