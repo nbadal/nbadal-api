@@ -108,6 +108,10 @@ router.get("/callback", (req, res) => {
     const token = req.query.oauth_token;
     const verifier = req.query.oauth_verifier;
 
+    if (!token) {
+        res.redirect(process.env.CLIENT_URL || "http://localhost:4200");
+    }
+
     firebase.firestore().collection("trelloRequests").doc(token).get().then((doc) => {
         const data = doc.data();
         if (!data) {
