@@ -1,19 +1,10 @@
 import crypto from "crypto";
 import express from "express";
-import admin from "firebase-admin";
 import oauth2 from "simple-oauth2";
 import TwitchClient from "twitch";
+import firebase from "./firebase";
 
 const router = express.Router();
-const privateKey = process.env.FIREBASE_PRIVATE_KEY || " ";
-const firebase = admin.initializeApp({
-    credential: admin.credential.cert({
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: privateKey.replace(/\\n/g, "\n"),
-        projectId: process.env.FIREBASE_PROJECT_ID,
-    }),
-    databaseURL: process.env.FIREBASE_DATABASE_URL,
-});
 
 const clientId = process.env.TWITCH_CLIENT_ID || "";
 const clientSecret = process.env.TWITCH_CLIENT_SECRET || "";
@@ -67,10 +58,16 @@ router.get("/callback", (req, res) => {
 
         twitchClient.users.getMe().then((user) => {
             const twitchId = user.id;
-            const twitchUser = user.name;
+            const twitchName = user.name;
             const userId = `twitch:${twitchId}`;
 
-            // TODO: put tokens / username into user DB.
+            firebase.firestore().collection("users").doc(userId).set({
+                twitchAuth: {
+                    accessToken,
+                    refreshToken,
+                },
+                twitchName,
+            });
 
             firebase.auth().createCustomToken(userId).then((userToken) => {
                 const clientUrl = process.env.CLIENT_URL || "http://localhost:4200";
