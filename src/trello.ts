@@ -122,7 +122,7 @@ router.get("/callback", (req, res) => {
         const user = data.userId;
 
         trelloAuth.getOAuthAccessToken(token, tokenSecret, verifier, (err, accessToken, accessTokenSecret) => {
-            firebase.firestore().collection("users").doc(user).set({
+            firebase.firestore().collection("users").doc(user).update({
                 trelloAuth: {
                     secret: accessTokenSecret,
                     token: accessToken,
