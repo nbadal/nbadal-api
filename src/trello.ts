@@ -3,6 +3,7 @@ import {OAuth} from "oauth";
 import {BehaviorSubject, Observable, Subject, Subscriber} from "rxjs";
 import {map, mergeMap} from "rxjs/operators";
 import firebase from "./firebase";
+import {OverlayData, OverlayResponse, TrelloList, UserData, UserTrelloAuth} from "./types";
 
 let trelloKey: string;
 let trelloSecret: string;
@@ -42,10 +43,10 @@ function bindOauthRequest(url: string, method: string, token: string, secret: st
     });
 }
 
-function getOverlay(id: string): Observable<any> {
-    const resultSubject = new Subject();
+function getOverlayFromId(id: string): Observable<OverlayResponse> {
+    const resultSubject = new Subject<OverlayResponse>();
     firebase.firestore().doc(`overlays/${id}`).get().then((overlayDoc) => {
-        const overlayData = overlayDoc.data();
+        const overlayData = overlayDoc.data() as OverlayData;
         if (!overlayData) {
             resultSubject.error({error: "Overlay not found."});
             return;
@@ -54,7 +55,7 @@ function getOverlay(id: string): Observable<any> {
         const userId = overlayData.user;
 
         firebase.firestore().doc(`users/${userId}`).get().then((userDoc) => {
-            const userData = userDoc.data();
+            const userData = userDoc.data() as UserData;
             if (!userData) {
                 resultSubject.error({error: "User not found."});
                 return;
@@ -62,22 +63,22 @@ function getOverlay(id: string): Observable<any> {
 
             const auth = userData.trelloAuth;
 
-            getOverlay2(overlayData, auth).subscribe(resultSubject);
+            getOverlay(overlayData, auth).subscribe(resultSubject);
         });
     });
     return resultSubject;
 }
 
-function getOverlay2(overlayData: any, trelloCreds: any): Observable<any> {
+function getOverlay(overlayData: OverlayData, trelloCreds: UserTrelloAuth): Observable<OverlayResponse> {
     return bindOauthRequest(`https://api.trello.com/1/boards/${overlayData.board}/lists`
         + `?fields=name&cards=open&card_fields=name`,
         "GET", trelloCreds.token, trelloCreds.secret)
-        .pipe(map((boardLists: any[]) => {
+        .pipe(map((boardLists: TrelloList[]) => {
             const listData = boardLists
                 .filter((list) => overlayData.lists.indexOf(list.id) >= 0)
                 .map((list) => {
-                    const formattedName = list.name.replace(" ", "-").toLowerCase();
-                    return {name: formattedName, cards: list.cards};
+                    list.name = list.name.replace(" ", "-").toLowerCase();
+                    return list;
                 });
 
             return {
@@ -100,7 +101,7 @@ router.get("/:id", (req, res, next) => {
             "Content-Type": "text/event-stream",
         });
         const trelloSub = trelloUpdateSubject.pipe(
-            mergeMap(() => getOverlay(overlayId)),
+            mergeMap(() => getOverlayFromId(overlayId)),
             map((cards) => JSON.stringify(cards)),
             map((cards) => `data: ${cards}\n\n`),
         ).subscribe((msg) => res.write(msg));
@@ -116,7 +117,7 @@ router.get("/:id", (req, res, next) => {
     }
 
     const overlayId = req.params.id;
-    getOverlay(overlayId).subscribe((overlay) => {
+    getOverlayFromId(overlayId).subscribe((overlay) => {
         res.json(overlay);
     }, (error) => {
         res.json(error);
