@@ -1,7 +1,7 @@
 import express from "express";
 import Trello from "node-trello";
 import {OAuth} from "oauth";
-import {BehaviorSubject, bindNodeCallback} from "rxjs";
+import {BehaviorSubject, bindNodeCallback, Observable, Subscriber} from "rxjs";
 import {filter, map, mergeMap, reduce} from "rxjs/operators";
 import firebase from "./firebase";
 
@@ -46,6 +46,64 @@ function getTrelloCards() {
         }, []),
     );
 }
+
+function bindOauthRequest(url: string, method: string, token: string, secret: string): Observable<any> {
+    return Observable.create((observer: Subscriber<any>) => {
+        trelloAuth.getProtectedResource(url, method, token, secret, (err, result) => {
+            if (err) {
+                observer.error(err);
+                return;
+            }
+            if (typeof result !== "string") {
+                observer.error("Not a string");
+                return;
+            }
+            observer.next(JSON.parse(result as string));
+            observer.complete();
+        });
+    });
+}
+
+router.get("/:id", (req, res, next) => {
+    if (!req.params.id) {
+        return next();
+    }
+
+    const overlayId = req.params.id;
+    firebase.firestore().doc(`overlays/${overlayId}`).get().then((overlayDoc) => {
+        const overlayData = overlayDoc.data();
+        if (!overlayData) {
+            res.sendStatus(400);
+            return;
+        }
+
+        const userId = overlayData.user;
+        const board = overlayData.board;
+        const lists = overlayData.lists as string[];
+
+        firebase.firestore().doc(`users/${userId}`).get().then((userDoc) => {
+            const userData = userDoc.data();
+            if (!userData) {
+                res.sendStatus(400);
+                return;
+            }
+
+            const auth = userData.trelloAuth;
+            bindOauthRequest(`https://api.trello.com/1/boards/${board}/lists`
+                + `?fields=name&cards=open&card_fields=name`,
+                "GET", auth.token, auth.secret).subscribe((boardLists: any[]) => {
+                const result = boardLists
+                    .filter((list) => lists.indexOf(list.id) >= 0)
+                    .map((list) => {
+                        const formattedName = list.name.replace(" ", "-").toLowerCase();
+                        return {name: formattedName, cards: list.cards};
+                    });
+
+                res.json(result);
+            });
+        });
+    });
+});
 
 router.get("/", (req, res, next) => {
     if ("text/event-stream" === req.header("accept")) {
@@ -115,6 +173,7 @@ router.get("/callback", (req, res) => {
     firebase.firestore().collection("trelloRequests").doc(token).get().then((doc) => {
         const data = doc.data();
         if (!data) {
+            res.sendStatus(400);
             return;
         }
 

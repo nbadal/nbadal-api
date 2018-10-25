@@ -5,7 +5,7 @@ import {Request, Response} from "express-serve-static-core";
 import createError from "http-errors";
 import logger from "morgan";
 import path from "path";
-import TrelloRouter from "./trello";
+import OverlayRouter from "./trello";
 import TwitchRouter from "./twitch";
 
 class App {
@@ -32,7 +32,7 @@ class App {
             res.redirect(301, "https://nbad.al");
         });
 
-        this.express.use("/trello", TrelloRouter);
+        this.express.use("/overlay", OverlayRouter);
         this.express.use("/twitch", TwitchRouter);
 
         this.express.use((req, res, next) => {
