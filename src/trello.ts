@@ -80,11 +80,12 @@ router.get("/:id", (req, res, next) => {
         const userId = overlayData.user;
         const board = overlayData.board;
         const lists = overlayData.lists as string[];
+        const title = overlayData.title;
 
         firebase.firestore().doc(`users/${userId}`).get().then((userDoc) => {
             const userData = userDoc.data();
             if (!userData) {
-                res.sendStatus(400);
+                res.sendStatus(404);
                 return;
             }
 
@@ -92,12 +93,17 @@ router.get("/:id", (req, res, next) => {
             bindOauthRequest(`https://api.trello.com/1/boards/${board}/lists`
                 + `?fields=name&cards=open&card_fields=name`,
                 "GET", auth.token, auth.secret).subscribe((boardLists: any[]) => {
-                const result = boardLists
+                const listData = boardLists
                     .filter((list) => lists.indexOf(list.id) >= 0)
                     .map((list) => {
                         const formattedName = list.name.replace(" ", "-").toLowerCase();
                         return {name: formattedName, cards: list.cards};
                     });
+
+                const result = {
+                    lists: listData,
+                    title,
+                };
 
                 res.json(result);
             });
