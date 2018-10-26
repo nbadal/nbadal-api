@@ -126,7 +126,7 @@ router.get("/:id", (req, res, next) => {
 });
 
 router.post("/", (req, res) => {
-    // console.log("Got Trello POST: " + JSON.stringify(req.body));
+    console.log("Got Trello POST: " + JSON.stringify(req.body));
     trelloUpdateSubject.next(true);
     res.sendStatus(200);
 });
