@@ -34,6 +34,6 @@
     "@types/oauth": "^0.9.1",
     "@types/rx": "^4.1.1",
     "@types/simple-oauth2": "^2.2.0",
-    "nodemon": "^1.18.4"
+    "nodemon": "^1.18.10"
   }
 }
